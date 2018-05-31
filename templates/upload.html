@@ -1,0 +1,110 @@
+<html>
+<form action="/uploadTutorial" method="POST" enctype="multipart/form-data">
+    <div>
+        Kurs Name
+        <input type="text" name="courseName">
+    </div>
+
+    Kurs Bild
+    <input type="file" name="courseBanner" accept="image/*">
+
+    <div>
+        Kurs Beschreibung
+        <input type="text" name="courseDescription">
+    </div>
+
+    <!--Eine Seite-->
+    <div id="allPages">
+        <div name="singlePage">
+            <br>
+            <div>
+                Titel der Seite:
+                <input type="text" name="pageTitle">
+            </div>
+            <div>
+                Style der Seite:
+                <!-- DropDown für 1 und 2, je nach Auswahl wird
+                mit Javascript Möglichkeit fürs hochladen eines Videos ein und ausgeblendet-->
+                <select name="pageStyle" value="1">
+                    <option>1</option>
+                    <option>2</option>
+                </select>
+                <div>
+                    <img src="" alt="Das Beispiel Bild, wie Tutorium mit dem ausgewählten Style aussieht">
+                </div>
+            </div>
+
+            <div name="uploadVideo">
+                Upload Video:
+                <input id="video_file" name="videoFile" accept="video/*" type="file">
+            </div>
+
+            <br>
+
+            Große Textbox für Texte..
+            <div>
+                <textarea rows="6" cols="50" name="docText"></textarea>
+            </div>
+
+            <div>
+                Beschreibendes Bild für Seite des Tutoriums
+                <input type="file" name="courseImg" accept="image/*">
+            </div>
+
+            Große Textbox für Bildbeschreibung..
+            <div>
+                <textarea rows="6" cols="50" name="docText2"></textarea>
+            </div>
+            ----------------------------------------
+            <br>
+        </div>
+
+    </div>
+
+    <div>
+        Weitere Seite zum Tutorium hinzufügen:
+        <button type="button" id="addPage">
+            Seite hinzufügen
+        </button>
+    </div>
+
+    <br>
+
+    <!--Hier bisher nicht hinzugefügt: Recap hinzufügen-->
+
+    <input type="hidden" id="pageCount" name="countPages"value="1">
+    <input type="submit">
+</form>
+<script>
+    pageCount = document.getElementById("pageCount")
+    addPageButton = document.getElementById("addPage");
+    allPages = document.getElementById("allPages")
+    singlePage = allPages.firstChild.nextSibling
+    newPage = singlePage.cloneNode(true)
+    addPageButton.addEventListener("click", function () {
+        newPage = newPage.cloneNode(true)
+        allPages.appendChild(newPage)
+        pageCount.value ++;
+        initDD()
+    });
+
+    function initDD() {
+        styleDD = document.getElementsByName("pageStyle");
+        videoDiv = document.getElementsByName("uploadVideo");
+        for (var i = 0; i < styleDD.length; i++) {
+            (function (index) {
+                styleDD[index].addEventListener("change", function () {
+                    if (styleDD[index].selectedIndex == 0) {
+                        videoDiv[index].style.visibility = "visible";
+                    } else {
+                        videoDiv[index].style.visibility = "hidden";
+                    }
+                });
+            })(i);
+        }
+    }
+    initDD()
+
+</script>
+
+</html>
