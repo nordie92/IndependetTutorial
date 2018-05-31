@@ -1,10 +1,11 @@
-from flask import Flask, render_template, send_from_directory, request, make_response  
+from flask import Flask, render_template, send_from_directory, request, make_response, session
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 from random import randint
 import os
 import base64
 import gridfs
+import bcrypt #pip install flask-bcrypt
 
 client = MongoClient()
 app = Flask(__name__ , template_folder='templates')
@@ -277,6 +278,12 @@ def getAllUsers():
     fullDB = studCorp.find()
     return fullDB[0]['users']
 
+def getAllUsersWrapperObject():
+    db = client.myTestBase
+    studCorp = db.studCorp
+    fullDB = studCorp.find()
+    return fullDB[0]
+
 def getAllCoursesWrapperObject():
     db = client.myTestBase
     studCorp = db.studCorp
@@ -499,6 +506,16 @@ def tempTest():
 # def testUploadCourseImg():
 
 
+#checking if user already exits by comparing mail
+def userExists(mail):
+    users = getAllUsers()
+    user = next((x for x in users if x['mail'] == mail), None)
+    return user is not None
+
+#checking if user is logged in
+def isLoggedIn():
+    return 'mail' in session
+
 def getCourseBanner(courseID):
     #suche Kurs
     foundCourse = getCourse(courseID)
@@ -630,6 +647,56 @@ def getTutorialWithDocumentID():
     #documentVideo = getCourseVideo(courseID, documentID)
     return renderTutorialTemplate(course, documentIndex,bannerImg,documentImg,videoID)
 
+#show register form or save register informations in mongo
+@app.route('/register', methods = ['POST', 'GET'])
+def register():
+    if request.method == 'POST':
+        mail = request.form.get('mail')
+        firstName = request.form.get('firstName')
+        lastName = request.form.get('lastName')
+        nickname = request.form.get('nickname')
+        password = request.form.get('password')
+        isTutor = request.form.get('isTutor')
+
+        #generate salted hash
+        passphrase = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+
+        #checking if inputs are valide
+        if len(mail) > 0 and len(firstName) and len(lastName) > 0 and len(password) > 0:
+            
+            #check if the user already exists
+            if userExists(mail) == False:
+                #get all users
+                allUsers = getAllUsersWrapperObject()
+                
+                #create new user
+                singleExampleUser = newEmptyUser()
+                singleExampleUser['mail'] = mail
+                singleExampleUser['first_name'] = firstName
+                singleExampleUser['last_name'] = lastName
+                singleExampleUser['nickname'] = nickname
+                singleExampleUser['passphrase'] = passphrase
+                if isTutor is None:
+                    singleExampleUser['isTutor'] = False
+                else:
+                    singleExampleUser['isTutor'] = True
+                
+                #append user
+                allUsers['users'].append(singleExampleUser)
+
+                #update alle Kurse in DB
+                updateDataBase('allUsers', allUsers)
+
+                #logging in user
+                session['mail'] = mail
+
+                return 'user added'
+            else:
+                return 'user already exists'
+        else:
+            return 'user data not correct'
+    else:
+        return render_template('register.html')
 
 @app.route('/index', methods=['GET'])
 def getIndex():
@@ -694,5 +761,6 @@ if __name__ == "__main__":
    initDB()
    #fillDB() 
 
+   app.secret_key = 'oiwfhwinehi' 
    app.run(debug=True, host='0.0.0.0')
 
